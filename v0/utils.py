@@ -48,9 +48,9 @@ RESET = "\033[0m"
 BG_GREEN = "\033[42m"
 BG_BLUE = "\033[44m"
 BG_RED = "\033[41m"
-# Keep these for possible moves list only
 FG_BLUE = "\033[34m"
 FG_RED = "\033[31m"
+FG_BRIGHT_WHITE = "\033[97m"
 
 
 def print_colored_board(
@@ -65,12 +65,15 @@ def print_colored_board(
     for i, row in enumerate(board):
         print(f"{8 - i} |", end=" ")
         for j, piece in enumerate(row):
+            if piece != ".":  # If it's a piece, always use bright white
+                piece = f"{FG_BRIGHT_WHITE}{piece}{RESET}"
+
             if selected and (i, j) == selected:
                 # Highlight selected piece with green background
                 print(f"{BG_GREEN}{piece}{RESET}", end=" ")
             elif (i, j) in move_locs:
                 move_type = move_types[(i, j)]
-                if piece == ".":
+                if board[i][j] == ".":
                     if move_type == MoveType.ADVANCE:
                         # Blue background for normal moves
                         print(f"{BG_BLUE}•{RESET}", end=" ")
@@ -80,7 +83,7 @@ def print_colored_board(
                 else:  # Capture
                     print(f"{BG_RED}{piece}{RESET}", end=" ")
             else:
-                # Normal pieces without color
+                # Normal pieces
                 print(piece, end=" ")
         print()
     print("    a b c d e f g h")
@@ -104,8 +107,13 @@ def print_possible_moves(start_notation: str, moves: list[Move]):
             )
 
 
-#
 def print_board(board: Board):
     for i, row in enumerate(board):
-        print(f"{8 - i} | {' '.join(row)}")
+        print(f"{8 - i} |", end=" ")
+        for piece in row:
+            if piece == ".":
+                print(piece, end=" ")
+            else:
+                print(f"{FG_BRIGHT_WHITE}{piece}{RESET}", end=" ")
+        print()
     print("    a b c d e f g h")
