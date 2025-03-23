@@ -1,6 +1,18 @@
 import os
-from type_defs import Board, BoardLoc
+from type_defs import Board, BoardLoc, Move, MoveType
 from typing import Tuple, Union
+
+
+def is_black_piece(piece: str) -> bool:
+    return piece in "♚♛♜♝♞♟"
+
+
+def is_white_piece(piece: str) -> bool:
+    return piece in "♔♕♖♗♘♙"
+
+
+def is_pawn(piece: str) -> bool:
+    return piece in "♙♟"
 
 
 def clear_screen():
@@ -36,30 +48,63 @@ RESET = "\033[0m"
 BG_GREEN = "\033[42m"
 BG_BLUE = "\033[44m"
 BG_RED = "\033[41m"
+# Keep these for possible moves list only
+FG_BLUE = "\033[34m"
+FG_RED = "\033[31m"
 
 
 def print_colored_board(
     board: Board,
     selected: Union[BoardLoc, None] = None,
-    moves: Union[list[BoardLoc], None] = None,
+    moves: Union[list[Move], None] = None,
 ):
     moves = moves or []
+    move_locs = {loc for loc, _ in moves}
+    move_types = {loc: move_type for loc, move_type in moves}
+
     for i, row in enumerate(board):
         print(f"{8 - i} |", end=" ")
         for j, piece in enumerate(row):
             if selected and (i, j) == selected:
+                # Highlight selected piece with green background
                 print(f"{BG_GREEN}{piece}{RESET}", end=" ")
-            elif (i, j) in moves:
+            elif (i, j) in move_locs:
+                move_type = move_types[(i, j)]
                 if piece == ".":
-                    print(f"{BG_BLUE}.{RESET}", end=" ")
-                else:
+                    if move_type == MoveType.ADVANCE:
+                        # Blue background for normal moves
+                        print(f"{BG_BLUE}•{RESET}", end=" ")
+                    elif move_type == MoveType.DOUBLE_ADVANCE:
+                        # Different symbol for double advance
+                        print(f"{BG_BLUE}◊{RESET}", end=" ")
+                else:  # Capture
                     print(f"{BG_RED}{piece}{RESET}", end=" ")
             else:
+                # Normal pieces without color
                 print(piece, end=" ")
         print()
     print("    a b c d e f g h")
 
 
+def print_possible_moves(start_notation: str, moves: list[Move]):
+    print(f"\nPossible moves from {start_notation}:")
+    for move, move_type in moves:
+        end_notation = loc_to_notation(move)
+        if move_type == MoveType.CAPTURE:
+            print(
+                f"  {FG_RED}{start_notation}{end_notation}{RESET} ({move_type.value})"
+            )
+        elif move_type == MoveType.DOUBLE_ADVANCE:
+            print(
+                f"  {FG_BLUE}{start_notation}{end_notation}{RESET} ({move_type.value})"
+            )
+        else:  # normal advance
+            print(
+                f"  {FG_BLUE}{start_notation}{end_notation}{RESET} ({move_type.value})"
+            )
+
+
+#
 def print_board(board: Board):
     for i, row in enumerate(board):
         print(f"{8 - i} | {' '.join(row)}")

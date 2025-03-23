@@ -2,17 +2,17 @@ from logic_check import is_valid_move, get_possible_moves
 from type_defs import Board
 from utils import (
     clear_screen,
-    loc_to_notation,
     notation_to_loc,
     move_piece,
     parse_move,
     print_board,
     print_colored_board,
+    print_possible_moves,
 )
 
 board: Board = [
-    ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],  # Rank 8 (Black)
-    ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],  # Rank 7
+    ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],  # Rank 8
+    ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],  # Rank 7 (Black)
     [".", ".", ".", ".", ".", ".", ".", "."],  # Rank 6
     [".", ".", ".", ".", ".", ".", ".", "."],  # Rank 5
     [".", ".", ".", ".", ".", ".", ".", "."],  # Rank 4
@@ -37,11 +37,7 @@ def play_game():
                 if piece != ".":
                     possible_moves = get_possible_moves(board, start)
                     print_colored_board(board, start, possible_moves)
-
-                    # Print possible moves in notation
-                    print(f"\nPossible moves from {last_move}:")
-                    for move in possible_moves:
-                        print(f"  {last_move}{loc_to_notation(move)}")
+                    print_possible_moves(last_move, possible_moves)
                 else:
                     print_board(board)
                     error_msg = "Empty square selected"
@@ -52,14 +48,14 @@ def play_game():
             print_board(board)
 
         print(f"\nCurrent turn: {'White' if is_white_turn else 'Black'}")
+        print(f"Last Move: \033[38;5;208m{last_move}\033[0m")
         if error_msg:
             print(f"Error: {error_msg}")
             error_msg = ""
 
-        move = input("\nYour move (e.g., e2e4, e2 for preview, or 'quit'): ")
-        if move.lower() == "quit":
+        move = input("\nYour move (e.g., e2e4, e2 for preview, or 'quit'): ").lower()
+        if move == "quit" or move == "q":
             break
-
         last_move = move
 
         if len(move) == 4:  # Regular move
@@ -68,7 +64,6 @@ def play_game():
                 if is_valid_move(board, start, end, is_white_turn):
                     move_piece(board, start, end)
                     is_white_turn = not is_white_turn
-                    last_move = ""
             except ValueError as e:
                 error_msg = str(e)
 

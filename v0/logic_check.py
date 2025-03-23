@@ -1,16 +1,5 @@
-from type_defs import Board, BoardLoc
-
-
-def is_black_piece(piece: str) -> bool:
-    return piece in "♚♛♜♝♞♟"
-
-
-def is_white_piece(piece: str) -> bool:
-    return piece in "♔♕♖♗♘♙"
-
-
-def is_pawn(piece: str) -> bool:
-    return piece in "♙♟"
+from type_defs import Board, BoardLoc, Move, MoveType
+from utils import is_white_piece, is_black_piece, is_pawn
 
 
 def is_valid_pawn_move(
@@ -100,7 +89,7 @@ def is_valid_move(
     return True
 
 
-def get_pawn_moves(board: Board, start: BoardLoc) -> list[BoardLoc]:
+def get_pawn_moves(board: Board, start: BoardLoc) -> list[Move]:
     moves = []
     piece = board[start[0]][start[1]]
     is_white = is_white_piece(piece)
@@ -110,12 +99,12 @@ def get_pawn_moves(board: Board, start: BoardLoc) -> list[BoardLoc]:
     forward = (start[0] + direction, start[1])
     if 0 <= forward[0] <= 7:
         if board[forward[0]][forward[1]] == ".":
-            moves.append(forward)
+            moves.append((forward, MoveType.ADVANCE))
             # First move can be two squares
             if (is_white and start[0] == 6) or (not is_white and start[0] == 1):
                 two_forward = (start[0] + 2 * direction, start[1])
                 if board[two_forward[0]][two_forward[1]] == ".":
-                    moves.append(two_forward)
+                    moves.append((two_forward, MoveType.DOUBLE_ADVANCE))
 
     # Diagonal captures
     for file_offset in [-1, 1]:
@@ -127,12 +116,12 @@ def get_pawn_moves(board: Board, start: BoardLoc) -> list[BoardLoc]:
                 if (is_white and is_black_piece(target)) or (
                     not is_white and is_white_piece(target)
                 ):
-                    moves.append(capture)
+                    moves.append((capture, MoveType.CAPTURE))
 
     return moves
 
 
-def get_possible_moves(board: Board, start: BoardLoc) -> list[BoardLoc]:
+def get_possible_moves(board: Board, start: BoardLoc) -> list[Move]:
     piece = board[start[0]][start[1]]
     if piece == ".":
         return []
