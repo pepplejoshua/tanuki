@@ -1,6 +1,14 @@
-from logic_check import is_valid_move
-from utils import print_board, clear_screen, parse_move, move_piece
+from logic_check import is_valid_move, get_possible_moves
 from type_defs import Board
+from utils import (
+    clear_screen,
+    loc_to_notation,
+    notation_to_loc,
+    move_piece,
+    parse_move,
+    print_board,
+    print_colored_board,
+)
 
 board: Board = [
     ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],  # Rank 8 (Black)
@@ -16,34 +24,53 @@ board: Board = [
 
 def play_game():
     is_white_turn = True
-    error_msg_from_last_turn = ""
+    error_msg = ""
     last_move = ""
 
     while True:
         clear_screen()
-        print_board(board)
-        print(f"\nCurrent turn: {'White' if is_white_turn else 'Black'}")
-        if error_msg_from_last_turn:
-            print(f"Last move '{last_move}' error: {error_msg_from_last_turn}")
-            error_msg_from_last_turn = ""
 
-        move = input("\nYour move (e.g., e2e4 or 'quit'): ")
+        if len(last_move) == 2:  # Preview mode
+            try:
+                start = notation_to_loc(last_move)
+                piece = board[start[0]][start[1]]
+                if piece != ".":
+                    possible_moves = get_possible_moves(board, start)
+                    print_colored_board(board, start, possible_moves)
+
+                    # Print possible moves in notation
+                    print(f"\nPossible moves from {last_move}:")
+                    for move in possible_moves:
+                        print(f"  {last_move}{loc_to_notation(move)}")
+                else:
+                    print_board(board)
+                    error_msg = "Empty square selected"
+            except (ValueError, IndexError):
+                print_board(board)
+                error_msg = "Invalid square"
+        else:
+            print_board(board)
+
+        print(f"\nCurrent turn: {'White' if is_white_turn else 'Black'}")
+        if error_msg:
+            print(f"Error: {error_msg}")
+            error_msg = ""
+
+        move = input("\nYour move (e.g., e2e4, e2 for preview, or 'quit'): ")
         if move.lower() == "quit":
             break
 
         last_move = move
 
-        try:
-            if len(move) != 4:
-                raise ValueError("Invalid move format")
-
-            start, end = parse_move(move)
-            if is_valid_move(board, start, end, is_white_turn):
-                move_piece(board, start, end)
-                is_white_turn = not is_white_turn
-        except ValueError as e:
-            error_msg_from_last_turn = str(e)
-            continue
+        if len(move) == 4:  # Regular move
+            try:
+                start, end = parse_move(move)
+                if is_valid_move(board, start, end, is_white_turn):
+                    move_piece(board, start, end)
+                    is_white_turn = not is_white_turn
+                    last_move = ""
+            except ValueError as e:
+                error_msg = str(e)
 
 
 play_game()

@@ -98,3 +98,46 @@ def is_valid_move(
 
     # Temporarily allow all moves
     return True
+
+
+def get_pawn_moves(board: Board, start: BoardLoc) -> list[BoardLoc]:
+    moves = []
+    piece = board[start[0]][start[1]]
+    is_white = is_white_piece(piece)
+    direction = -1 if is_white else 1
+
+    # Forward moves
+    forward = (start[0] + direction, start[1])
+    if 0 <= forward[0] <= 7:
+        if board[forward[0]][forward[1]] == ".":
+            moves.append(forward)
+            # First move can be two squares
+            if (is_white and start[0] == 6) or (not is_white and start[0] == 1):
+                two_forward = (start[0] + 2 * direction, start[1])
+                if board[two_forward[0]][two_forward[1]] == ".":
+                    moves.append(two_forward)
+
+    # Diagonal captures
+    for file_offset in [-1, 1]:
+        new_file = start[1] + file_offset
+        if 0 <= new_file <= 7:
+            capture = (start[0] + direction, new_file)
+            if 0 <= capture[0] <= 7:
+                target = board[capture[0]][capture[1]]
+                if (is_white and is_black_piece(target)) or (
+                    not is_white and is_white_piece(target)
+                ):
+                    moves.append(capture)
+
+    return moves
+
+
+def get_possible_moves(board: Board, start: BoardLoc) -> list[BoardLoc]:
+    piece = board[start[0]][start[1]]
+    if piece == ".":
+        return []
+
+    if is_pawn(piece):
+        return get_pawn_moves(board, start)
+
+    return []
