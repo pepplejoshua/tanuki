@@ -3,7 +3,7 @@
 tanuki is a personal project to learn chess in the most roundabout, hands-on way possible—by building a chess platform from scratch. Named after the sly, adaptable tanuki of Japanese folklore, this project blends chess logic, AI, and a bit of mischief to create a tool for learning, playing, and experimenting. It’s a long-term journey, starting simple and growing into something bigger, all while documenting the process (and chaos) on a blog.
 
 ## Version 0 (v0): Single-Player Terminal Game
-The first step is a bare-bones, single-player chess game that runs in the terminal. Built entirely from scratch (no chess libraries here!), v0 is about laying the groundwork and having fun while learning.
+The first step is a bare-bones, single-player chess game that runs in the terminal. Built entirely from scratch (no chess libraries), v0 is about laying the groundwork and having fun while learning.
 
 ### What’s in v0:
 - **Chess Logic:** A custom-built chess engine with an 8x8 board, piece movement (starting with basics like pawns), and move validation. No fancy rules like castling or en passant yet—just enough to play.
