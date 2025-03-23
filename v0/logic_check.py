@@ -1,5 +1,5 @@
 from type_defs import Board, BoardLoc, Move, MoveType
-from utils import is_white_piece, is_black_piece, is_pawn
+from utils import is_white_piece, is_black_piece, is_pawn, is_knight
 
 
 def is_valid_pawn_move(
@@ -55,6 +55,25 @@ def is_valid_pawn_move(
     return False
 
 
+def is_valid_knight_move(
+    board: Board, start: BoardLoc, end: BoardLoc, pawn_is_white: bool
+) -> bool:
+    # get the differences in rank and file
+    rank_diff = abs(end[0] - start[0])
+    file_diff = abs(end[1] - start[1])
+
+    # check if it's an L-shape move (2 up + 1 left | right OR 1 up + 2 left | right)
+    if not ((rank_diff == 2 and file_diff == 1) or (rank_diff == 1 and file_diff == 2)):
+        return False
+
+    # check if target square has a friendly piece
+    target = board[end[0]][end[1]]
+    if pawn_is_white:
+        return not is_white_piece(target)  # can't capture own piece
+
+    return not is_black_piece(target)  # can't capture own piece
+
+
 def is_valid_move(
     board: Board, start: BoardLoc, end: BoardLoc, is_white_turn: bool
 ) -> bool:
@@ -84,8 +103,10 @@ def is_valid_move(
     if is_pawn(piece):
         if not is_valid_pawn_move(board, start, end, is_white_turn):
             raise ValueError("Invalid pawn move")
+    if is_knight(piece):
+        if not is_valid_knight_move(board, start, end, is_white_turn):
+            raise ValueError("Invalid knight move")
 
-    # Temporarily allow all moves
     return True
 
 
@@ -121,6 +142,43 @@ def get_pawn_moves(board: Board, start: BoardLoc) -> list[Move]:
     return moves
 
 
+def get_knight_moves(board: Board, start: BoardLoc) -> list[Move]:
+    moves = []
+    piece = board[start[0]][start[1]]
+    is_white = is_white_piece(piece)
+
+    # offsets to compute all possible knight moves
+    offsets = [
+        (-2, -1),
+        (-2, 1),  # Up 2, left/right 1
+        (2, -1),
+        (2, 1),  # Down 2, left/right 1
+        (-1, -2),
+        (-1, 2),  # Up 1, left/right 2
+        (1, -2),
+        (1, 2),  # Down 1, left/right 2
+    ]
+
+    for rank_offset, file_offset in offsets:
+        new_rank = start[0] + rank_offset
+        new_file = start[1] + file_offset
+
+        # check if the move is within board bounds
+        if 0 <= new_rank <= 7 and 0 <= new_file <= 7:
+            end = (new_rank, new_file)
+            target = board[new_rank][new_file]
+
+            # determine if it's a capture or a regular move
+            if target == ".":
+                moves.append((end, MoveType.ADVANCE))
+            elif (is_white and is_black_piece(target)) or (
+                not is_white and is_white_piece(target)
+            ):
+                moves.append((end, MoveType.CAPTURE))
+
+    return moves
+
+
 def get_possible_moves(board: Board, start: BoardLoc) -> list[Move]:
     piece = board[start[0]][start[1]]
     if piece == ".":
@@ -128,5 +186,7 @@ def get_possible_moves(board: Board, start: BoardLoc) -> list[Move]:
 
     if is_pawn(piece):
         return get_pawn_moves(board, start)
+    if is_knight(piece):
+        return get_knight_moves(board, start)
 
     return []

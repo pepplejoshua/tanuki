@@ -15,6 +15,10 @@ def is_pawn(piece: str) -> bool:
     return piece in "♙♟"
 
 
+def is_knight(piece: str) -> bool:
+    return piece in "♘♞"
+
+
 def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -62,6 +66,7 @@ def print_colored_board(
     move_locs = {loc for loc, _ in moves}
     move_types = {loc: move_type for loc, move_type in moves}
 
+    print("    a b c d e f g h")
     for i, row in enumerate(board):
         print(f"{8 - i} |", end=" ")
         for j, piece in enumerate(row):
@@ -85,7 +90,7 @@ def print_colored_board(
             else:
                 # Normal pieces
                 print(piece, end=" ")
-        print()
+        print(f"| {8 - i}")
     print("    a b c d e f g h")
 
 
@@ -108,6 +113,7 @@ def print_possible_moves(start_notation: str, moves: list[Move]):
 
 
 def print_board(board: Board):
+    print("    a b c d e f g h")
     for i, row in enumerate(board):
         print(f"{8 - i} |", end=" ")
         for piece in row:
@@ -115,5 +121,5 @@ def print_board(board: Board):
                 print(piece, end=" ")
             else:
                 print(f"{FG_BRIGHT_WHITE}{piece}{RESET}", end=" ")
-        print()
+        print(f"| {8 - i}")
     print("    a b c d e f g h")
