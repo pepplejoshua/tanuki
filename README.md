@@ -15,6 +15,29 @@ The first step is a bare-bones, single-player chess game that runs in the termin
 - Build a solid foundation for future features.
 - Learn chess and coding along the way.
 
+### Implementation Progress
+
+#### Piece Movement
+| Piece  | Basic Moves | Move Preview | Special Moves |
+|--------|-------------|--------------|---------------|
+| Pawn   | ✅         | ✅           | ❌ En Passant, Promotion |
+| Knight | ✅         | ✅           | N/A |
+| Bishop | ✅         | ✅           | N/A |
+| Rook   | ✅         | ❌           | ❌ Castling |
+| Queen  | ❌         | ❌           | N/A |
+| King   | ❌         | ❌           | ❌ Castling |
+
+#### Game Features
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Move Validation | ✅ | For implemented pieces |
+| Move Preview | ✅ | Shows possible moves with color coding |
+| Move History | ❌ | Needed for en passant, castling |
+| Check Detection | ❌ | Required for valid moves |
+| Checkmate Detection | ❌ | Required for game end |
+| Turn System | ✅ | Alternates between white and black |
+| AI Opponent | ❌ | Planned for future |
+
 ## Future Vision
 Tanuki Chess won’t stop at v0. The long-term dream is a platform where people can learn chess, tweak AI models, and watch epic battles—human vs. AI, AI vs. AI, or whatever wild ideas come up. Here’s the rough vibe:
 

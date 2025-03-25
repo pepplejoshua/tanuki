@@ -1,5 +1,5 @@
 from type_defs import Board, BoardLoc, Move, MoveType
-from utils import is_bishop, is_white_piece, is_black_piece, is_pawn, is_knight
+from utils import is_bishop, is_black_piece, is_knight, is_pawn, is_rook, is_white_piece
 
 
 def is_valid_pawn_move(
@@ -107,6 +107,39 @@ def is_valid_bishop_move(
     return not is_black_piece(target)  # can't capture own piece
 
 
+def is_valid_rook_move(
+    board: Board, start: BoardLoc, end: BoardLoc, rook_is_white: bool
+) -> bool:
+    # get the difference in rank and file
+    rank_diff = end[0] - start[0]
+    file_diff = end[1] - start[1]
+
+    # check if move is horizontal (same row) or vertical (same column)
+    if rank_diff != 0 and file_diff != 0:  # one of them must be 0
+        return False
+
+    # determine the direction of movement
+    rank_step = 0 if rank_diff == 0 else (1 if rank_diff > 0 else -1)
+    file_step = 0 if file_diff == 0 else (1 if file_diff > 0 else -1)
+
+    # check path for blocking pieces
+    current_rank = start[0] + rank_step
+    current_file = start[1] + file_step
+
+    # check all squares between start and end (exclusive)
+    while (current_rank, current_file) != end:
+        if board[current_rank][current_file] != ".":
+            return False  # path is blocked
+        current_rank += rank_step
+        current_file += file_step
+
+    # check destination square
+    target = board[end[0]][end[1]]
+    if rook_is_white:
+        return not is_white_piece(target)  # can't capture own piece
+    return not is_black_piece(target)  # can't capture own piece
+
+
 def is_valid_move(
     board: Board, start: BoardLoc, end: BoardLoc, is_white_turn: bool
 ) -> bool:
@@ -141,6 +174,9 @@ def is_valid_move(
     elif is_bishop(piece):
         if not is_valid_bishop_move(board, start, end, is_white_turn):
             raise ValueError("Invalid bishop move")
+    elif is_rook(piece):
+        if not is_valid_rook_move(board, start, end, is_white_turn):
+            raise ValueError("Invalid rook move")
 
     return True
 
@@ -238,15 +274,6 @@ def get_bishop_moves(board: Board, start: BoardLoc) -> list[Move]:
             target = board[current_rank][current_file]
             end = (current_rank, current_file)
 
-            # TODO: since the move list might be too long, we can compress the move
-            # list using RLE or something. I am not sure how it would detect this.
-            # Maybe if we are within (-rank_step, -file_step) of the last tracked move,
-            # we can compress the new move somehow. If the last move part of a compressed one,
-            # we need a way to compute that last move to determine if the latest move can be
-            # compressed too. Since every move in this loop can be compressed
-            # (they are all in the same direction), we can use a flag to bypass computing
-            # the last compressed move. All moves generated inside the while loop can
-            # be compressed. Maybe. I don't know how that would even look visually.
             if target == ".":
                 moves.append((end, MoveType.ADVANCE))
             elif (is_white and is_black_piece(target)) or (

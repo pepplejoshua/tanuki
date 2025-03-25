@@ -23,6 +23,10 @@ def is_knight(piece: str) -> bool:
     return piece in "♘♞"
 
 
+def is_rook(piece: str) -> bool:
+    return piece in "♖♜"
+
+
 def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
