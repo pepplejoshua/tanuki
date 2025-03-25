@@ -1,5 +1,5 @@
 from type_defs import Board, BoardLoc, Move, MoveType
-from utils import is_white_piece, is_black_piece, is_pawn, is_knight
+from utils import is_bishop, is_white_piece, is_black_piece, is_pawn, is_knight
 
 
 def is_valid_pawn_move(
@@ -56,7 +56,7 @@ def is_valid_pawn_move(
 
 
 def is_valid_knight_move(
-    board: Board, start: BoardLoc, end: BoardLoc, pawn_is_white: bool
+    board: Board, start: BoardLoc, end: BoardLoc, knight_is_white: bool
 ) -> bool:
     # get the differences in rank and file
     rank_diff = abs(end[0] - start[0])
@@ -68,9 +68,42 @@ def is_valid_knight_move(
 
     # check if target square has a friendly piece
     target = board[end[0]][end[1]]
-    if pawn_is_white:
+    if knight_is_white:
         return not is_white_piece(target)  # can't capture own piece
 
+    return not is_black_piece(target)  # can't capture own piece
+
+
+def is_valid_bishop_move(
+    board: Board, start: BoardLoc, end: BoardLoc, bishop_is_white: bool
+) -> bool:
+    # get the differences in rank(row) and file(column)
+    rank_diff = end[0] - start[0]
+    file_diff = end[1] - start[1]
+
+    # check if move is diagonal (absolute differences should be equal)
+    if abs(rank_diff) != abs(file_diff):
+        return False
+
+    # determine direction of movement
+    rank_step = 1 if rank_diff > 0 else -1
+    file_step = 1 if file_diff > 0 else -1
+
+    # check path for blocking pieces
+    current_rank = start[0] + rank_step
+    current_file = start[1] + file_step
+
+    # check all diagonal squares between start and end (exclusive)
+    while (current_rank, current_file) != end:
+        if board[current_rank][current_file] != ".":
+            return False  # path is blocked
+        current_rank += rank_step
+        current_file += file_step
+
+    # check destination square
+    target = board[end[0]][end[1]]
+    if bishop_is_white:
+        return not is_white_piece(target)  # can't capture own piece
     return not is_black_piece(target)  # can't capture own piece
 
 
@@ -103,9 +136,12 @@ def is_valid_move(
     if is_pawn(piece):
         if not is_valid_pawn_move(board, start, end, is_white_turn):
             raise ValueError("Invalid pawn move")
-    if is_knight(piece):
+    elif is_knight(piece):
         if not is_valid_knight_move(board, start, end, is_white_turn):
             raise ValueError("Invalid knight move")
+    elif is_bishop(piece):
+        if not is_valid_bishop_move(board, start, end, is_white_turn):
+            raise ValueError("Invalid bishop move")
 
     return True
 
@@ -179,6 +215,10 @@ def get_knight_moves(board: Board, start: BoardLoc) -> list[Move]:
     return moves
 
 
+def get_bishop_moves(board: Board, start: BoardLoc) -> list[Move]:
+    return []
+
+
 def get_possible_moves(board: Board, start: BoardLoc) -> list[Move]:
     piece = board[start[0]][start[1]]
     if piece == ".":
@@ -186,7 +226,9 @@ def get_possible_moves(board: Board, start: BoardLoc) -> list[Move]:
 
     if is_pawn(piece):
         return get_pawn_moves(board, start)
-    if is_knight(piece):
+    elif is_knight(piece):
         return get_knight_moves(board, start)
+    elif is_bishop(piece):
+        return get_bishop_moves(board, start)
 
     return []

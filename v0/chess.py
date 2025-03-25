@@ -53,7 +53,9 @@ def play_game():
             print(f"Error: {error_msg}")
             error_msg = ""
 
-        move = input("\nYour move (e.g., e2e4, e2 for preview, or 'quit'): ").lower()
+        move = input(
+            "\nYour move (e.g., e2e4, e2 for preview, or 'q' or 'quit' to exit): "
+        ).lower()
         if move == "quit" or move == "q":
             break
         last_move = move

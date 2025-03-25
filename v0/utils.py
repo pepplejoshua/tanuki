@@ -15,6 +15,10 @@ def is_pawn(piece: str) -> bool:
     return piece in "♙♟"
 
 
+def is_bishop(piece: str) -> bool:
+    return piece in "♗♝"
+
+
 def is_knight(piece: str) -> bool:
     return piece in "♘♞"
 
