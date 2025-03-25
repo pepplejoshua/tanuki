@@ -1,4 +1,4 @@
-from logic_check import is_valid_pawn_move, is_valid_knight_move
+from logic_check import is_valid_pawn_move, is_valid_knight_move, is_valid_bishop_move
 from utils import parse_move
 
 
@@ -93,5 +93,97 @@ def test_knight_moves():
     assert not is_valid_knight_move(test_board, start, end, True)
 
 
+def test_bishop_moves():
+    # Test board with various scenarios:
+    test_board = [
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 8
+        [".", ".", ".", "♟", ".", ".", ".", "."],  # 7
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 6
+        [".", ".", ".", "♗", ".", ".", ".", "."],  # 5
+        [".", ".", ".", ".", "♙", ".", ".", "."],  # 4
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 3
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 2
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 1
+    ]  #  a    b    c    d    e    f    g    h
+    # White bishop at d5 can move:
+    # - Northwest (c6, b7, a8)
+    # - Northeast (e6, f7, g8)
+    # - Southwest (c4, b3, a2)
+    # - Southeast (e4 blocked by white pawn)
+    # Cannot capture black pawn at d7 (not a diagonal move)
+
+    # Valid moves
+    start, end = parse_move("d5c6")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+    start, end = parse_move("d5b7")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+    start, end = parse_move("d5a8")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+
+    start, end = parse_move("d5e6")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+    start, end = parse_move("d5f7")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+    start, end = parse_move("d5g8")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+
+    start, end = parse_move("d5c4")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+    start, end = parse_move("d5b3")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+    start, end = parse_move("d5a2")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+
+    start, end = parse_move("d5f7")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+    start, end = parse_move("d5g8")
+    assert is_valid_bishop_move(test_board, start, end, True)  # Empty square
+
+    # Invalid moves
+    start, end = parse_move("d5d7")
+    assert not is_valid_bishop_move(test_board, start, end, True)  # Non-diagonal
+
+    start, end = parse_move("d5e4")
+    assert not is_valid_bishop_move(
+        test_board, start, end, True
+    )  # Blocked by own piece
+
+    start, end = parse_move("d5f3")
+    assert not is_valid_bishop_move(
+        test_board, start, end, True
+    )  # Diagonal but blocked by own piece
+
+    # Test board edges
+    test_board_2 = [
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 8
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 7
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 6
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 5
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 4
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 3
+        [".", ".", ".", ".", ".", ".", ".", "♗"],  # 2
+        [".", ".", ".", ".", ".", ".", ".", "."],  # 1
+    ]  #  a    b    c    d    e    f    g    h
+    # White bishop in corner at h2
+
+    # Valid moves from corner
+    start, end = parse_move("h2g3")
+    assert is_valid_bishop_move(test_board_2, start, end, True)
+
+    start, end = parse_move("h2g1")
+    assert is_valid_bishop_move(test_board_2, start, end, True)
+
+    start, end = parse_move("h2b8")
+    assert is_valid_bishop_move(test_board_2, start, end, True)
+
+    # Invalid moves from corner
+    start, end = parse_move("h2h3")
+    assert not is_valid_bishop_move(test_board_2, start, end, True)  # Not diagonal
+
+    start, end = parse_move("h2g2")
+    assert not is_valid_bishop_move(test_board_2, start, end, True)  # Not diagonal
+
+
 test_pawn_moves()
 test_knight_moves()
+test_bishop_moves()

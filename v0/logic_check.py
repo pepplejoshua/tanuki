@@ -132,7 +132,6 @@ def is_valid_move(
     if not is_white_turn and not is_black_piece(piece):
         raise ValueError(f"Black's turn but trying to move {piece}")
 
-    # Pawn movement
     if is_pawn(piece):
         if not is_valid_pawn_move(board, start, end, is_white_turn):
             raise ValueError("Invalid pawn move")
@@ -216,7 +215,52 @@ def get_knight_moves(board: Board, start: BoardLoc) -> list[Move]:
 
 
 def get_bishop_moves(board: Board, start: BoardLoc) -> list[Move]:
-    return []
+    moves = []
+    piece = board[start[0]][start[1]]
+    is_white = is_white_piece(piece)
+
+    # check all 4 diagonal directions
+    directions = [
+        (-1, -1),  # NW
+        (-1, 1),  # NE
+        (1, -1),  # SW
+        (1, 1),  # SE
+    ]
+
+    # for each direction, compute all possible squares we can
+    # move to
+    for rank_step, file_step in directions:
+        current_rank = start[0] + rank_step
+        current_file = start[1] + file_step
+
+        # keep moving in this direction until we hit a piece or the board edge
+        while 0 <= current_rank <= 7 and 0 <= current_file <= 7:
+            target = board[current_rank][current_file]
+            end = (current_rank, current_file)
+
+            # TODO: since the move list might be too long, we can compress the move
+            # list using RLE or something. I am not sure how it would detect this.
+            # Maybe if we are within (-rank_step, -file_step) of the last tracked move,
+            # we can compress the new move somehow. If the last move part of a compressed one,
+            # we need a way to compute that last move to determine if the latest move can be
+            # compressed too. Since every move in this loop can be compressed
+            # (they are all in the same direction), we can use a flag to bypass computing
+            # the last compressed move. All moves generated inside the while loop can
+            # be compressed. Maybe. I don't know how that would even look visually.
+            if target == ".":
+                moves.append((end, MoveType.ADVANCE))
+            elif (is_white and is_black_piece(target)) or (
+                not is_white and is_white_piece(target)
+            ):
+                moves.append((end, MoveType.CAPTURE))
+                break  # stop after a capture
+            else:
+                break  # stop at friendly piece
+
+            current_rank += rank_step
+            current_file += file_step
+
+    return moves
 
 
 def get_possible_moves(board: Board, start: BoardLoc) -> list[Move]:
