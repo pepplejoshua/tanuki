@@ -1,5 +1,13 @@
 from type_defs import Board, BoardLoc, Move, MoveType
-from utils import is_bishop, is_black_piece, is_knight, is_pawn, is_rook, is_white_piece
+from utils import (
+    is_bishop,
+    is_black_piece,
+    is_knight,
+    is_pawn,
+    is_queen,
+    is_rook,
+    is_white_piece,
+)
 
 
 def is_valid_pawn_move(
@@ -140,6 +148,16 @@ def is_valid_rook_move(
     return not is_black_piece(target)  # can't capture own piece
 
 
+def is_valid_queen_move(
+    board: Board, start: BoardLoc, end: BoardLoc, queen_is_white: bool
+) -> bool:
+    # conveniently, a queen move is valid if it's either a valid rook move
+    # OR a valid bishop moves
+    return is_valid_rook_move(
+        board, start, end, queen_is_white
+    ) or is_valid_bishop_move(board, start, end, queen_is_white)
+
+
 def is_valid_move(
     board: Board, start: BoardLoc, end: BoardLoc, is_white_turn: bool
 ) -> bool:
@@ -177,6 +195,9 @@ def is_valid_move(
     elif is_rook(piece):
         if not is_valid_rook_move(board, start, end, is_white_turn):
             raise ValueError("Invalid rook move")
+    elif is_queen(piece):
+        if not is_valid_queen_move(board, start, end, is_white_turn):
+            raise ValueError("Invalid queen move")
 
     return True
 
@@ -328,6 +349,13 @@ def get_rook_moves(board: Board, start: BoardLoc) -> list[Move]:
     return moves
 
 
+def get_queen_moves(board: Board, start: BoardLoc) -> list[Move]:
+    # combine rook and bishop moves
+    rook_moves = get_rook_moves(board, start)
+    bishop_moves = get_bishop_moves(board, start)
+    return rook_moves + bishop_moves
+
+
 def get_possible_moves(board: Board, start: BoardLoc) -> list[Move]:
     piece = board[start[0]][start[1]]
     if piece == ".":
@@ -341,5 +369,7 @@ def get_possible_moves(board: Board, start: BoardLoc) -> list[Move]:
         return get_bishop_moves(board, start)
     elif is_rook(piece):
         return get_rook_moves(board, start)
+    elif is_queen(piece):
+        return get_queen_moves(board, start)
 
     return []

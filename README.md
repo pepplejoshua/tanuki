@@ -23,8 +23,8 @@ The first step is a bare-bones, single-player chess game that runs in the termin
 | Pawn   | ✅         | ✅           | ❌ En Passant, Promotion |
 | Knight | ✅         | ✅           | N/A |
 | Bishop | ✅         | ✅           | N/A |
-| Rook   | ✅         | ❌           | ❌ Castling |
-| Queen  | ❌         | ❌           | N/A |
+| Rook   | ✅         | ✅           | ❌ Castling |
+| Queen  | ✅         | ✅           | N/A |
 | King   | ❌         | ❌           | ❌ Castling |
 
 #### Game Features

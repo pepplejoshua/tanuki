@@ -27,6 +27,10 @@ def is_rook(piece: str) -> bool:
     return piece in "♖♜"
 
 
+def is_queen(piece: str) -> bool:
+    return piece in "♕♛"
+
+
 def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -34,6 +38,14 @@ def clear_screen():
 def move_piece(board: Board, start: BoardLoc, end: BoardLoc):
     board[end[0]][end[1]] = board[start[0]][start[1]]
     board[start[0]][start[1]] = "."
+
+
+def teleport_piece(board: Board, start: BoardLoc, end: BoardLoc):
+    # Swap the pieces at start and end locations
+    board[start[0]][start[1]], board[end[0]][end[1]] = (
+        board[end[0]][end[1]],
+        board[start[0]][start[1]],
+    )
 
 
 def loc_to_notation(loc: BoardLoc) -> str:

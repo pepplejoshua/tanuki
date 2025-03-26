@@ -8,6 +8,7 @@ from utils import (
     print_board,
     print_colored_board,
     print_possible_moves,
+    teleport_piece,
 )
 
 board: Board = [
@@ -58,7 +59,16 @@ def play_game():
         ).lower()
         if move == "quit" or move == "q":
             break
+
         last_move = move
+        if move.startswith(";") and len(move) == 5:
+            try:
+                start, end = parse_move(move[1:])
+                teleport_piece(board, start, end)
+                continue
+            except (ValueError, IndexError) as e:
+                error_msg = f"Invalid teleport: {e}"
+                continue
 
         if len(move) == 4:  # Regular move
             try:
