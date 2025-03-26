@@ -257,10 +257,10 @@ def get_bishop_moves(board: Board, start: BoardLoc) -> list[Move]:
 
     # check all 4 diagonal directions
     directions = [
-        (-1, -1),  # NW
-        (-1, 1),  # NE
-        (1, -1),  # SW
-        (1, 1),  # SE
+        (-1, -1),  # North West
+        (-1, 1),  # North East
+        (1, -1),  # South West
+        (1, 1),  # South East
     ]
 
     # for each direction, compute all possible squares we can
@@ -290,6 +290,44 @@ def get_bishop_moves(board: Board, start: BoardLoc) -> list[Move]:
     return moves
 
 
+def get_rook_moves(board: Board, start: BoardLoc) -> list[Move]:
+    moves = []
+    piece = board[start[0]][start[1]]
+    is_white = is_white_piece(piece)
+
+    # check all 4 directions
+    directions = [
+        (-1, 0),  # North
+        (1, 0),  # South
+        (0, -1),  # West
+        (0, 1),  # East
+    ]
+
+    for rank_step, file_step in directions:
+        current_rank = start[0] + rank_step
+        current_file = start[1] + file_step
+
+        # keep moving in this direction until we hit a piece or the board's edge
+        while 0 <= current_rank <= 7 and 0 <= current_file <= 7:
+            target = board[current_rank][current_file]
+            end = (current_rank, current_file)
+
+            if target == ".":
+                moves.append((end, MoveType.ADVANCE))
+            elif (is_white and is_black_piece(target)) or (
+                not is_white and is_white_piece(target)
+            ):
+                moves.append((end, MoveType.CAPTURE))
+                break  # stop after capture
+            else:
+                break  # stop at friendly piece
+
+            current_rank += rank_step
+            current_file += file_step
+
+    return moves
+
+
 def get_possible_moves(board: Board, start: BoardLoc) -> list[Move]:
     piece = board[start[0]][start[1]]
     if piece == ".":
@@ -301,5 +339,7 @@ def get_possible_moves(board: Board, start: BoardLoc) -> list[Move]:
         return get_knight_moves(board, start)
     elif is_bishop(piece):
         return get_bishop_moves(board, start)
+    elif is_rook(piece):
+        return get_rook_moves(board, start)
 
     return []
