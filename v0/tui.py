@@ -4,9 +4,8 @@ from textual.message import Message
 from textual.widgets import Header, Static
 from textual import events
 
-from type_defs import BoardLoc, Move, MoveType
+from type_defs import BoardLoc, Move, MoveType, Board
 from logic_check import get_possible_moves
-from typing import Optional
 
 
 class ChessSquare(Static):
@@ -84,7 +83,7 @@ class ChessBoard(Static):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.selected_pos: Optional[BoardLoc] = None
+        self.selected_pos: BoardLoc | None = None
         self.possible_moves: list[Move] = []
         self.board = [
             ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
@@ -139,11 +138,6 @@ class ChessBoard(Static):
             self.possible_moves = get_possible_moves(self.board, message.location)
         self.refresh_highlights()
 
-    def set_cursor(self, location: BoardLoc) -> None:
-        """Set the cursor position"""
-        self.cursor_pos = location
-        self.refresh_highlights()
-
     def refresh_highlights(self) -> None:
         """Update the visual state of all squares"""
         for y in range(8):
@@ -165,7 +159,7 @@ class ChessBoard(Static):
                             else:
                                 square.add_class("possible-move")
 
-    def _get_square_at(self, location: BoardLoc) -> Optional[ChessSquare]:
+    def _get_square_at(self, location: BoardLoc) -> ChessSquare | None:
         """Get the ChessSquare widget at a given location"""
         try:
             widget = list(self.query(ChessSquare).results())[
@@ -246,10 +240,43 @@ class GameInfo(Static):
         .title {
             text-style: bold;
         }
+
+        .info-container {
+            margin-top: 1;
+        }
     """
 
     def compose(self) -> ComposeResult:
         yield Static("Game Info", classes="title")
+        with Vertical(classes="info-container"):
+            yield Static("Selected: None", id="selected-piece")
+            yield Static("", id="possible-moves")
+
+    def update_info(
+        self,
+        selected_pos: BoardLoc | None,
+        board: Board,
+        possible_moves: list[Move],
+    ) -> None:
+        """Update game info based on board state"""
+        selected = self.query_one("#selected-piece", Static)
+        moves = self.query_one("#possible-moves", Static)
+
+        if selected_pos is None:
+            selected.update("Selected: None")
+            moves.update("")
+        else:
+            y, x = selected_pos
+            piece = board[y][x]
+            selected.update(f"Selected: {piece} at {chr(x + 97)}{8 - y}")
+
+            # Show possible moves in algebraic notation
+            moves_text = "\nPossible moves:\n"
+            for move, move_type in possible_moves:
+                move_y, move_x = move
+                notation = f"{chr(move_x + 97)}{8 - move_y}"
+                moves_text += f"• {notation} ({move_type.value})\n"
+            moves.update(moves_text)
 
 
 class CommandBar(Static):
@@ -327,13 +354,23 @@ class Tanuki(App):
                 yield CommandBar(id="command-bar")
             yield MoveHistory(id="move-history")
 
+    def on_chess_square_selected(self, message: ChessSquare.Selected) -> None:
+        """Update game info when a square is selected"""
+        board = self.query_one(ChessBoard)
+        game_info = self.query_one(GameInfo)
+        game_info.update_info(board.selected_pos, board.board, board.possible_moves)
+
     def on_key(self, event: events.Key) -> None:
         board = self.query_one(ChessBoard)
+        game_info = self.query_one(GameInfo)
+        game_info.update_info(board.selected_pos, board.board, [])
 
         # Initialize cursor if not set
         if board.selected_pos is None:
             board.selected_pos = (0, 0)
+            board.possible_moves = get_possible_moves(board.board, (0, 0))
             board.refresh_highlights()
+            game_info.update_info(board.selected_pos, board.board, board.possible_moves)
             return
 
         y, x = board.selected_pos
@@ -348,12 +385,17 @@ class Tanuki(App):
                 board.selected_pos = (y, x + 1)
             case "escape":
                 board.selected_pos = None
+                board.possible_moves = []
             case "enter" | "space":
                 # should show possible moves on current selection
                 if board.selected_pos:  # placeholder
                     board.selected_pos = None
+                    board.possible_moves = []
 
+        if board.selected_pos is not None:
+            board.possible_moves = get_possible_moves(board.board, board.selected_pos)
         board.refresh_highlights()
+        game_info.update_info(board.selected_pos, board.board, board.possible_moves)
 
 
 if __name__ == "__main__":
