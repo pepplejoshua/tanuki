@@ -1,10 +1,23 @@
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, ScrollableContainer
+from textual.message import Message
 from textual.widgets import Header, Static
+from textual import events
+
+from type_defs import BoardLoc, Move, MoveType
+from logic_check import get_possible_moves
+from typing import Optional
 
 
 class ChessSquare(Static):
     """A single square on the chess board"""
+
+    class Selected(Message):
+        """Message sent when a square is selected"""
+
+        def __init__(self, location: BoardLoc) -> None:
+            self.location = location
+            super().__init__()
 
     DEFAULT_CSS = """
         ChessSquare {
@@ -22,11 +35,28 @@ class ChessSquare(Static):
             background: #666666;
             color: #ffffff;
         }
+
+        ChessSquare.selected {
+            background: lightblue 60%;
+        }
+
+        ChessSquare.possible-move {
+            background: green 90%;
+        }
+
+        ChessSquare.possible-capture {
+            background: red 30%;
+        }
     """
 
-    def __init__(self, piece: str, is_light: bool):
+    def __init__(self, piece: str, is_light: bool, location: BoardLoc):
         super().__init__(piece)
+        self.location = location
         self.add_class("light" if is_light else "dark")
+
+    def on_click(self) -> None:
+        """Handle mouse clicks on the square."""
+        self.post_message(self.Selected(self.location))
 
 
 class ChessBoard(Static):
@@ -40,7 +70,7 @@ class ChessBoard(Static):
                 grid-rows: 2 2 2 2 2 2 2 2 2 2;
                 content-align: center middle;
                 height: auto;
-                padding-top: 1;
+                padding-top: 2;
                 border: solid green;
             }
 
@@ -52,8 +82,11 @@ class ChessBoard(Static):
             }
         """
 
-    def compose(self) -> ComposeResult:
-        board = [
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.selected_pos: Optional[BoardLoc] = None
+        self.possible_moves: list[Move] = []
+        self.board = [
             ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
             ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],
             [".", ".", ".", ".", ".", ".", ".", "."],
@@ -64,6 +97,7 @@ class ChessBoard(Static):
             ["♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"],
         ]
 
+    def compose(self) -> ComposeResult:
         # Generate all widgets first
         widgets = []
 
@@ -78,8 +112,10 @@ class ChessBoard(Static):
             widgets.append(Static(str(8 - rank), classes="label"))
             for file in range(8):
                 is_light = (rank + file) % 2 == 0
-                piece = board[rank][file]
-                widgets.append(ChessSquare(piece if piece != "." else " ", is_light))
+                piece = self.board[rank][file]
+                widgets.append(
+                    ChessSquare(piece if piece != "." else " ", is_light, (rank, file))
+                )
             widgets.append(Static(str(8 - rank), classes="label"))
 
         # Bottom row (files a-h again)
@@ -92,6 +128,53 @@ class ChessBoard(Static):
         for widget in widgets:
             yield widget
 
+    def on_chess_square_selected(self, message: ChessSquare.Selected) -> None:
+        """Handle square selection"""
+        # If clicking the currently selected square, deselect it
+        if self.selected_pos == message.location:
+            self.selected_pos = None
+            self.possible_moves = []
+        else:
+            self.selected_pos = message.location
+            self.possible_moves = get_possible_moves(self.board, message.location)
+        self.refresh_highlights()
+
+    def set_cursor(self, location: BoardLoc) -> None:
+        """Set the cursor position"""
+        self.cursor_pos = location
+        self.refresh_highlights()
+
+    def refresh_highlights(self) -> None:
+        """Update the visual state of all squares"""
+        for y in range(8):
+            for x in range(8):
+                square = self._get_square_at((y, x))
+                if square:
+                    # Clear existing state classes
+                    square.remove_class("selected")
+                    square.remove_class("possible-move")
+                    square.remove_class("possible-capture")
+
+                    if (y, x) == self.selected_pos:
+                        square.add_class("selected")
+
+                    for move, move_type in self.possible_moves:
+                        if (y, x) == move:
+                            if move_type == MoveType.CAPTURE:
+                                square.add_class("possible-capture")
+                            else:
+                                square.add_class("possible-move")
+
+    def _get_square_at(self, location: BoardLoc) -> Optional[ChessSquare]:
+        """Get the ChessSquare widget at a given location"""
+        try:
+            widget = list(self.query(ChessSquare).results())[
+                location[0] * 8 + location[1]
+            ]
+            return widget
+        except IndexError:
+            return None
+
 
 class MoveHistory(Static):
     """Move history panel."""
@@ -99,7 +182,7 @@ class MoveHistory(Static):
     DEFAULT_CSS = """
         MoveHistory {
             height: 100%;
-            padding-left: 1;
+            padding: 0 0 0 1;
             border: solid blue;
         }
 
@@ -116,9 +199,9 @@ class MoveHistory(Static):
     def __init__(self, id: str):
         super().__init__(id)
         self.moves: list[tuple[str, str]] = []  # (white_move, black_move)
-        # Test
-        for i in range(50):  # Add some test moves
-            self.moves.append(("e2e4", "e7e5"))
+        # Add some test moves
+        # for i in range(50):
+        #     self.moves.append(("e2e4", "e7e5"))
 
     def compose(self) -> ComposeResult:
         yield Static("Move History", classes="title")
@@ -166,7 +249,7 @@ class GameInfo(Static):
     """
 
     def compose(self) -> ComposeResult:
-        yield Static("Game Info")
+        yield Static("Game Info", classes="title")
 
 
 class CommandBar(Static):
@@ -174,22 +257,28 @@ class CommandBar(Static):
 
     DEFAULT_CSS = """
         CommandBar {
+            height: 100%;
+            padding-left: 1;
             border: solid yellow;
+        }
+
+        .title {
+            text-style: bold;
         }
     """
 
     def compose(self) -> ComposeResult:
-        yield Static("Command Bar")
+        yield Static("Command Bar", classes="title")
 
 
-class ChessApp(App):
+class Tanuki(App):
     """The main chess application."""
 
     CSS = """
     Screen {
         layout: grid;
         grid-size: 2;
-        grid-columns: 50% 50%;
+        grid-columns: 45% 55%;
         grid-rows: 1fr auto;
     }
 
@@ -238,7 +327,35 @@ class ChessApp(App):
                 yield CommandBar(id="command-bar")
             yield MoveHistory(id="move-history")
 
+    def on_key(self, event: events.Key) -> None:
+        board = self.query_one(ChessBoard)
+
+        # Initialize cursor if not set
+        if board.selected_pos is None:
+            board.selected_pos = (0, 0)
+            board.refresh_highlights()
+            return
+
+        y, x = board.selected_pos
+        match event.key:
+            case "up" if y > 0:
+                board.selected_pos = (y - 1, x)
+            case "down" if y < 7:
+                board.selected_pos = (y + 1, x)
+            case "left" if x > 0:
+                board.selected_pos = (y, x - 1)
+            case "right" if x < 7:
+                board.selected_pos = (y, x + 1)
+            case "escape":
+                board.selected_pos = None
+            case "enter" | "space":
+                # should show possible moves on current selection
+                if board.selected_pos:  # placeholder
+                    board.selected_pos = None
+
+        board.refresh_highlights()
+
 
 if __name__ == "__main__":
-    app = ChessApp()
+    app = Tanuki()
     app.run()
